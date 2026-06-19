@@ -1,0 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,500;1,500&display=swap');
+@import "tailwindcss";
+
+:root {
+  --bg: #11151A;
+  --surface: #181D24;
+  --surface-raised: #1F2530;
+  --line: #272E38;
+  --line-bright: #3A4250;
+  --brass: #C08A46;
+  --brass-bright: #E3A857;
+  --text: #ECE8DF;
+  --text-muted: #878E9C;
+  --text-faint: #565D6B;
+  --success: #6FA787;
+  --danger: #C1604F;
+  
+  --font-sans: 'IBM Plex Sans', sans-serif;
+  --font-serif: 'Spectral', serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+/* Custom styles for the airport departures split-flap board aesthetics */
+.split-flap-font {
+  font-family: var(--font-mono);
+}
+
+.spectral-serif {
+  font-family: var(--font-serif);
+}
+
+.brass-accent {
+  color: var(--brass);
+}
+
+.hairline-border {
+  border: 1px solid var(--line);
+}
+
+.hairline-border-bright {
+  border: 1px solid var(--line-bright);
+}
+
+/* Animations */
+@keyframes soft-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.animate-pulse-soft {
+  animation: soft-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes slide-up-fade {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-row-entry {
+  animation: slide-up-fade 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: shake 0.2s ease-in-out 0s 2;
+}
