@@ -35,7 +35,7 @@ export default function Home() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
   // Step 1: Project dropzone and source states
-  const [projectSource, setProjectSource] = useState<'local' | 'github'>('local');
+  const [projectSource, setProjectSource] = useState<'local' | 'github'>('github');
   const [folderName, setFolderName] = useState('');
   const [filesCount, setFilesCount] = useState(0);
   const [projectZip, setProjectZip] = useState<Blob | null>(null);
@@ -131,7 +131,7 @@ export default function Home() {
         setActiveBuild(data.build);
 
         // Update temporaryBuilds matching state
-        setTemporaryBuilds(prev => 
+        setTemporaryBuilds(prev =>
           prev.map(b => b._id === id ? { ...data.build, isNew: b.isNew } : b)
         );
 
@@ -257,7 +257,7 @@ export default function Home() {
         createdAt: new Date().toISOString(),
         isNew: true
       };
-      
+
       setTemporaryBuilds(prev => [newRow, ...prev]);
       setActiveBuildId(tempId);
       setActiveBuild(newRow);
@@ -308,16 +308,16 @@ export default function Home() {
 
   return (
     <div className="flex flex-col flex-1 bg-[#11151A] text-[#ECE8DF] min-h-screen relative font-sans select-none">
-      
+
       {/* HEADER */}
       <Header />
 
       {/* MAIN LAYOUT CONTAINER */}
       <main className="max-w-6xl w-full mx-auto px-6 py-8 flex flex-col gap-8 flex-1">
-        
+
         {/* TWO-COLUMN WIZARD/HISTORY CONTAINER */}
         <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] bg-[#181D24] border border-[#272E38] min-h-[460px] relative">
-          
+
           {/* LEFT RAIL (Step Selector Ticket Stubs) */}
           <LeftRail
             step={step}

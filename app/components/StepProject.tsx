@@ -7,8 +7,8 @@ interface StepProjectProps {
   filesCount: number;
   onProjectZip: (zip: Blob, folderName: string, filesCount: number) => void;
   setErrorMsg: (msg: string) => void;
-  projectSource: 'local' | 'github';
-  setProjectSource: (src: 'local' | 'github') => void;
+  projectSource: 'github' | 'local';
+  setProjectSource: (src: 'github' | 'local') => void;
   githubUrl: string;
   setGithubUrl: (url: string) => void;
   githubBranch: string;
@@ -34,13 +34,13 @@ export default function StepProject({
 
   const shouldIgnore = (pathStr: string) => {
     const parts = pathStr.split('/');
-    return parts.some(part => 
-      part === 'node_modules' || 
-      part === '.git' || 
-      part === '.expo' || 
-      part === '.next' || 
-      part === 'web-build' || 
-      part === 'dist' || 
+    return parts.some(part =>
+      part === 'node_modules' ||
+      part === '.git' ||
+      part === '.expo' ||
+      part === '.next' ||
+      part === 'web-build' ||
+      part === 'dist' ||
       part === 'build' ||
       part === 'ios' ||
       part === 'android'
@@ -60,7 +60,7 @@ export default function StepProject({
       } else if (entry.isDirectory) {
         if (shouldIgnore(entry.name)) return;
         const dirReader = entry.createReader();
-        
+
         const readEntriesBatch = async (): Promise<any[]> => {
           return new Promise((res) => {
             dirReader.readEntries(res);
@@ -197,25 +197,23 @@ export default function StepProject({
         <div className="flex border border-[#272E38] p-0.5 bg-[#11151A] self-start md:self-end">
           <button
             type="button"
-            onClick={() => setProjectSource('local')}
-            className={`px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition-all focus:outline-none ${
-              projectSource === 'local'
-                ? 'bg-[#E3A857] text-[#11151A] font-bold'
-                : 'text-[#878E9C] hover:text-[#ECE8DF]'
-            }`}
+            onClick={() => setProjectSource('github')}
+            className={`px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition-all focus:outline-none ${projectSource === 'github'
+              ? 'bg-[#E3A857] text-[#11151A] font-bold'
+              : 'text-[#878E9C] hover:text-[#ECE8DF]'
+              }`}
           >
-            Local Folder
+            GitHub Repo
           </button>
           <button
             type="button"
-            onClick={() => setProjectSource('github')}
-            className={`px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition-all focus:outline-none ${
-              projectSource === 'github'
-                ? 'bg-[#E3A857] text-[#11151A] font-bold'
-                : 'text-[#878E9C] hover:text-[#ECE8DF]'
-            }`}
+            onClick={() => setProjectSource('local')}
+            className={`px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition-all focus:outline-none ${projectSource === 'local'
+              ? 'bg-[#E3A857] text-[#11151A] font-bold'
+              : 'text-[#878E9C] hover:text-[#ECE8DF]'
+              }`}
           >
-            GitHub Repo
+            Local Folder
           </button>
         </div>
       </div>
@@ -228,11 +226,10 @@ export default function StepProject({
           onDragLeave={handleDrag}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`border border-dashed p-10 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-3 rounded-none ${
-            dragActive
-              ? 'border-[#E3A857] bg-[#1F2530]/50'
-              : 'border-[#272E38] hover:border-[#3A4250] bg-[#14181F]/30'
-          }`}
+          className={`border border-dashed p-10 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-3 rounded-none ${dragActive
+            ? 'border-[#E3A857] bg-[#1F2530]/50'
+            : 'border-[#272E38] hover:border-[#3A4250] bg-[#14181F]/30'
+            }`}
         >
           <input
             id="project-dir-upload"
