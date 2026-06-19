@@ -3,8 +3,8 @@ import React from 'react';
 interface LeftRailProps {
   step: number;
   setStep: (step: number) => void;
-  activeTab: 'build' | 'history';
-  setActiveTab: (tab: 'build' | 'history') => void;
+  activeTab: 'build' | 'history' | 'console';
+  setActiveTab: (tab: 'build' | 'history' | 'console') => void;
   isStep1Complete: boolean;
   isStep2Complete: boolean;
   isStep3Complete: boolean;
@@ -26,13 +26,14 @@ export default function LeftRail({
     { num: 2, label: 'Expo', sub: 'Access tokens', isDone: isStep2Complete, tab: 'build' as const },
     { num: 3, label: 'Apple', sub: 'Developer profiles', isDone: isStep3Complete, tab: 'build' as const },
     { num: 4, label: 'Review', sub: 'Launch build', isDone: isStep4Complete, tab: 'build' as const },
-    { num: 5, label: 'Departures', sub: 'Clearance logs', isDone: false, tab: 'history' as const },
+    { num: 5, label: 'Builds', sub: 'Clearance logs', isDone: false, tab: 'history' as const },
+    { num: 6, label: 'Console', sub: 'Real-time feed', isDone: false, tab: 'console' as const },
   ];
 
   return (
-    <nav className="flex flex-row md:flex-col overflow-x-auto md:overflow-x-visible border-b md:border-b-0 md:border-r border-[#272E38] bg-[#181D24] select-none shrink-0">
+    <nav className="flex flex-row md:flex-col overflow-x-auto md:overflow-x-visible border-b md:border-b-0 md:border-r border-[#272E38] bg-[#181D24] select-none shrink-0 animate-fade-in">
       {steps.map((s) => {
-        const isActive = (activeTab === s.tab && (s.tab === 'history' || step === s.num));
+        const isActive = activeTab === s.tab && (s.tab !== 'build' || step === s.num);
         const isDone = s.isDone;
         
         return (
@@ -45,7 +46,7 @@ export default function LeftRail({
                 setStep(s.num);
               }
             }}
-            className={`text-left px-5 py-5 border-r border-b-0 md:border-r-0 md:border-b border-dashed border-[#272E38] transition-colors relative focus:outline-none shrink-0 w-[140px] md:w-full select-none ${
+            className={`text-left px-5 py-5 border-r border-b-0 md:border-r-0 md:border-b border-dashed border-[#272E38] transition-all duration-200 relative focus:outline-none shrink-0 w-[140px] md:w-full select-none ${
               isActive
                 ? 'bg-[#1F2530] text-[#ECE8DF]'
                 : isDone
@@ -55,7 +56,7 @@ export default function LeftRail({
           >
             {/* Active indicator bar */}
             {isActive && (
-              <div className="absolute left-0 bottom-0 md:bottom-0 md:top-0 w-full h-[3px] md:w-[3px] md:h-full bg-[#E3A857]" />
+              <div className="absolute left-0 bottom-0 md:bottom-0 md:top-0 w-full h-[3px] md:w-[3px] md:h-full bg-[#E3A857] transition-all" />
             )}
 
             <div className="flex justify-between items-center mb-1">

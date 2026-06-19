@@ -32,7 +32,7 @@ export default function DeparturesBoard({
       <div className="flex justify-between items-center">
         <div>
           <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-[#C08A46] block mb-1">Step 05</span>
-          <h2 className="text-2xl font-medium tracking-tight spectral-serif text-[#ECE8DF]">Departures</h2>
+          <h2 className="text-2xl font-medium tracking-tight spectral-serif text-[#ECE8DF]">Builds</h2>
           <p className="text-xs text-[#878E9C] mt-1">Clearance log history and remote EAS cloud status board.</p>
         </div>
         <button
@@ -61,13 +61,13 @@ export default function DeparturesBoard({
             {isLoadingHistory && combinedBuilds.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-6 py-10 text-center text-[#565D6B]">
-                  <Loader2Icon className="h-5 w-5 animate-spin mx-auto text-[#C08A46] mb-2" /> Loading departure logs...
+                  <Loader2Icon className="h-5 w-5 animate-spin mx-auto text-[#C08A46] mb-2" /> Loading build logs...
                 </td>
               </tr>
             ) : combinedBuilds.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-6 py-10 text-center text-[#565D6B]">
-                  No departures cleared. Trigger a pre-flight build to populate.
+                  No builds triggered yet. Start a build to populate.
                 </td>
               </tr>
             ) : (

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Hangar — EAS Production Build Console",
-  description: "Automated Expo/EAS production build runner and split-flap departures board.",
+  title: "expoship — EAS Production Build Console",
+  description: "Automated Expo/EAS production build runner and split-flap builds board.",
 };
 
 export default function RootLayout({

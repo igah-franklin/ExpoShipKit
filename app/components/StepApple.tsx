@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { KeyIcon } from 'lucide-react';
+import { Key } from 'lucide-react';
 
 interface StepAppleProps {
   appleKeyFile: File | null;
@@ -10,12 +10,9 @@ interface StepAppleProps {
   setKeyId: (val: string) => void;
   appleTeamId: string;
   setAppleTeamId: (val: string) => void;
-  appleTeamType: string;
-  setAppleTeamType: (val: string) => void;
   customBundleId: string;
   setCustomBundleId: (val: string) => void;
   setErrorMsg: (msg: string) => void;
-  onNext: () => void;
 }
 
 export default function StepApple({
@@ -27,12 +24,9 @@ export default function StepApple({
   setKeyId,
   appleTeamId,
   setAppleTeamId,
-  appleTeamType,
-  setAppleTeamType,
   customBundleId,
   setCustomBundleId,
   setErrorMsg,
-  onNext,
 }: StepAppleProps) {
   const [appleKeyDragActive, setAppleKeyDragActive] = useState(false);
   const p8InputRef = useRef<HTMLInputElement>(null);
@@ -75,53 +69,55 @@ export default function StepApple({
     }
   };
 
-  const isFormValid = !!appleKeyFile && issuerId.trim().length > 5 && keyId.trim().length > 4 && appleTeamId.trim().length > 4;
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div>
         <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-[#C08A46] block mb-1">Step 03</span>
-        <h2 className="text-2xl font-medium tracking-tight spectral-serif text-[#ECE8DF]">Apple</h2>
-        <p className="text-xs text-[#878E9C] mt-1">Upload ASC private key and developer identifiers.</p>
+        <h2 className="text-2xl font-medium tracking-tight spectral-serif text-[#ECE8DF]">Apple Credentials</h2>
+        <p className="text-xs text-[#878E9C] mt-1">Provide Apple Developer Account API access keys.</p>
       </div>
 
       <div className="space-y-6 max-w-xl">
-        {/* Compact P8 key upload */}
+        {/* Large P8 key upload dropzone */}
         <div className="space-y-2">
           <label className="block font-mono text-[11px] text-[#878E9C] uppercase tracking-wider">
             AuthKey (.p8) Signing Key <span className="text-[#C1604F]">*</span>
           </label>
-          <div className="flex">
-            <div
-              id="p8-dropzone"
-              onDragEnter={handleP8Drag}
-              onDragOver={handleP8Drag}
-              onDragLeave={handleP8Drag}
-              onDrop={handleP8Drop}
-              onClick={() => p8InputRef.current?.click()}
-              className={`inline-flex items-center gap-3 px-4 py-3 border border-dashed cursor-pointer transition-colors bg-[#11151A] max-w-sm rounded-none ${
-                appleKeyDragActive
-                  ? 'border-[#E3A857]'
-                  : 'border-[#272E38] hover:border-[#3A4250]'
-              }`}
-            >
-              <input
-                id="apple-key-p8-upload"
-                type="file"
-                ref={p8InputRef}
-                accept=".p8"
-                onChange={handleP8FileChange}
-                className="hidden"
-              />
-              <KeyIcon className={`h-4 w-4 shrink-0 ${appleKeyFile ? 'text-[#6FA787]' : 'text-[#878E9C]'}`} />
-              <span id="p8-filename-display" className="text-xs font-mono text-left">
-                {appleKeyFile ? (
-                  <span className="text-[#6FA787] font-semibold">✓ {appleKeyFile.name}</span>
-                ) : (
-                  <span className="text-[#878E9C]">Drag .p8 Apple key or browse</span>
-                )}
-              </span>
-            </div>
+          <div
+            id="p8-dropzone"
+            onDragEnter={handleP8Drag}
+            onDragOver={handleP8Drag}
+            onDragLeave={handleP8Drag}
+            onDrop={handleP8Drop}
+            onClick={() => p8InputRef.current?.click()}
+            className={`w-full border border-dashed p-8 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-2 bg-[#14181F]/30 rounded-none ${
+              appleKeyDragActive
+                ? 'border-[#E3A857] bg-[#1F2530]/50'
+                : 'border-[#272E38] hover:border-[#3A4250]'
+            }`}
+          >
+            <input
+              id="apple-key-p8-upload"
+              type="file"
+              ref={p8InputRef}
+              accept=".p8"
+              onChange={handleP8FileChange}
+              className="hidden"
+            />
+            <Key className={`h-6 w-6 ${appleKeyFile ? 'text-[#6FA787]' : 'text-[#C08A46]'}`} />
+            <span id="p8-filename-display" className="text-xs font-mono">
+              {appleKeyFile ? (
+                <span className="text-[#6FA787] font-semibold">✓ {appleKeyFile.name}</span>
+              ) : (
+                <span className="text-[#ECE8DF]">
+                  Drag your App Store Connect .p8 key here or{' '}
+                  <span className="text-[#C08A46] underline font-medium">browse</span>
+                </span>
+              )}
+            </span>
+            <p className="text-[9px] text-[#565D6B] font-mono">
+              File name usually matches: AuthKey_[KEY_ID].p8
+            </p>
           </div>
         </div>
 
@@ -137,7 +133,7 @@ export default function StepApple({
               value={issuerId}
               onChange={(e) => setIssuerId(e.target.value)}
               placeholder="e.g. 60a6c6a4-..."
-              className="w-full bg-[#11151A] border border-[#272E38] focus:border-[#3A4250] text-[#ECE8DF] font-mono text-sm px-4 py-2.5 focus:outline-none focus:ring-0 rounded-none"
+              className="w-full bg-[#11151A] border border-[#272E38] focus:border-[#3A4250] text-[#ECE8DF] font-mono text-sm px-4 py-2.5 focus:outline-none focus:ring-0 rounded-none transition-colors"
             />
           </div>
 
@@ -151,7 +147,7 @@ export default function StepApple({
               value={keyId}
               onChange={(e) => setKeyId(e.target.value)}
               placeholder="e.g. 2X93T53N8G"
-              className="w-full bg-[#11151A] border border-[#272E38] focus:border-[#3A4250] text-[#ECE8DF] font-mono text-sm px-4 py-2.5 focus:outline-none focus:ring-0 rounded-none"
+              className="w-full bg-[#11151A] border border-[#272E38] focus:border-[#3A4250] text-[#ECE8DF] font-mono text-sm px-4 py-2.5 focus:outline-none focus:ring-0 rounded-none transition-colors"
             />
           </div>
         </div>
@@ -167,28 +163,10 @@ export default function StepApple({
               value={appleTeamId}
               onChange={(e) => setAppleTeamId(e.target.value)}
               placeholder="e.g. ABC123XYZ9"
-              className="w-full bg-[#11151A] border border-[#272E38] focus:border-[#3A4250] text-[#ECE8DF] font-mono text-sm px-4 py-2.5 focus:outline-none focus:ring-0 rounded-none"
+              className="w-full bg-[#11151A] border border-[#272E38] focus:border-[#3A4250] text-[#ECE8DF] font-mono text-sm px-4 py-2.5 focus:outline-none focus:ring-0 rounded-none transition-colors"
             />
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="team-type" className="block font-mono text-[11px] text-[#878E9C] uppercase tracking-wider">
-              Team Type <span className="text-[#C1604F]">*</span>
-            </label>
-            <select
-              id="team-type"
-              value={appleTeamType}
-              onChange={(e) => setAppleTeamType(e.target.value)}
-              className="w-full bg-[#11151A] border border-[#272E38] focus:border-[#3A4250] text-[#ECE8DF] font-mono text-sm px-4 py-2.5 focus:outline-none focus:ring-0 rounded-none appearance-none cursor-pointer"
-            >
-              <option value="COMPANY_OR_ORGANIZATION">Company / Organization</option>
-              <option value="INDIVIDUAL">Individual</option>
-              <option value="IN_HOUSE">Enterprise (In-House)</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label htmlFor="custom-bundle-id" className="block font-mono text-[11px] text-[#878E9C] uppercase tracking-wider">
               Bundle Identifier Override <span className="text-[#565D6B]">(Optional)</span>
@@ -199,7 +177,7 @@ export default function StepApple({
               value={customBundleId}
               onChange={(e) => setCustomBundleId(e.target.value)}
               placeholder="e.g. com.yourcompany.app"
-              className="w-full bg-[#11151A] border border-[#272E38] focus:border-[#3A4250] text-[#ECE8DF] font-mono text-sm px-4 py-2.5 focus:outline-none focus:ring-0 rounded-none"
+              className="w-full bg-[#11151A] border border-[#272E38] focus:border-[#3A4250] text-[#ECE8DF] font-mono text-sm px-4 py-2.5 focus:outline-none focus:ring-0 rounded-none transition-colors"
             />
           </div>
         </div>
@@ -226,7 +204,6 @@ export default function StepApple({
           </div>
         </details>
       </div>
-
     </div>
   );
 }

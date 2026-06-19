@@ -61,7 +61,7 @@ export default function ConsoleFeed({
             onClick={onClose}
             className="px-3 py-1 border border-[#272E38] bg-transparent hover:border-[#3A4250] font-mono text-[10px] uppercase text-[#878E9C] hover:text-[#ECE8DF] transition-colors focus:outline-none"
           >
-            ← Back to Departures
+            ← Back to Builds
           </button>
         </div>
       </div>

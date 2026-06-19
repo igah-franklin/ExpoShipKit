@@ -6,6 +6,9 @@ interface StepReviewProps {
   appleKeyFile: File | null;
   issuerId: string;
   keyId: string;
+  projectSource?: 'local' | 'github';
+  githubUrl?: string;
+  githubBranch?: string;
 }
 
 export default function StepReview({
@@ -14,6 +17,9 @@ export default function StepReview({
   appleKeyFile,
   issuerId,
   keyId,
+  projectSource = 'local',
+  githubUrl = '',
+  githubBranch = '',
 }: StepReviewProps) {
   const maskSensitive = (val: string) => {
     if (!val) return '—';
@@ -21,8 +27,13 @@ export default function StepReview({
     return `•••• ${val.slice(-4)}`;
   };
 
+  const projectVal = projectSource === 'github'
+    ? `${githubUrl} [${githubBranch || 'main'}]`
+    : (folderName || 'No project loaded');
+
   const rows = [
-    { label: 'project', val: folderName || 'No project loaded' },
+    { label: 'project source', val: projectSource === 'github' ? 'GitHub Repo' : 'Local Folder' },
+    { label: 'project details', val: projectVal },
     { label: 'build profile', val: 'production' },
     { label: 'masked token', val: maskSensitive(expoToken) },
     { label: 'signing key filename', val: appleKeyFile?.name || '' },

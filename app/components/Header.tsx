@@ -7,7 +7,7 @@ export default function Header() {
         <div className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-[#C08A46] inline-block" />
           <h1 id="header-logo" className="text-xl font-medium tracking-tight spectral-serif text-[#ECE8DF]">
-            Hangar
+            expoship
           </h1>
         </div>
         <div className="flex items-center gap-4 text-right">

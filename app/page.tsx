@@ -30,14 +30,17 @@ const BACKEND_URL = 'http://localhost:5001';
 export default function Home() {
   // Navigation & Wizard State
   const [step, setStep] = useState(1);
-  const [activeTab, setActiveTab] = useState<'build' | 'history'>('build');
+  const [activeTab, setActiveTab] = useState<'build' | 'history' | 'console'>('build');
   const [buildHistory, setBuildHistory] = useState<BuildRecord[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
-  // Step 1: Project dropzone state
+  // Step 1: Project dropzone and source states
+  const [projectSource, setProjectSource] = useState<'local' | 'github'>('local');
   const [folderName, setFolderName] = useState('');
   const [filesCount, setFilesCount] = useState(0);
   const [projectZip, setProjectZip] = useState<Blob | null>(null);
+  const [githubUrl, setGithubUrl] = useState('');
+  const [githubBranch, setGithubBranch] = useState('main');
 
   // Step 2: Expo token state
   const [expoToken, setExpoToken] = useState('');
@@ -50,6 +53,12 @@ export default function Home() {
   const [appleTeamType, setAppleTeamType] = useState('COMPANY_OR_ORGANIZATION');
   const [customBundleId, setCustomBundleId] = useState('');
 
+  // Validation States
+  const [isExpoValidated, setIsExpoValidated] = useState(false);
+  const [isAppleValidated, setIsAppleValidated] = useState(false);
+  const [isValidatingExpo, setIsValidatingExpo] = useState(false);
+  const [isValidatingApple, setIsValidatingApple] = useState(false);
+
   // Step 4: Submission & Polling State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeBuildId, setActiveBuildId] = useState<string | null>(null);
@@ -58,16 +67,34 @@ export default function Home() {
   const [errorMsg, setErrorMsg] = useState('');
 
   // Step status helpers for ticket stubs
-  const isStep1Complete = !!projectZip;
-  const isStep2Complete = expoToken.trim().length > 10;
-  const isStep3Complete = !!appleKeyFile && issuerId.trim().length > 5 && keyId.trim().length > 4 && appleTeamId.trim().length > 4;
+  const isStep1Complete = projectSource === 'local' ? !!projectZip : githubUrl.trim().length > 0;
+  const isStep2Complete = expoToken.trim().length > 10 && isExpoValidated;
+  const isStep3Complete = !!appleKeyFile && issuerId.trim().length > 5 && keyId.trim().length > 4 && appleTeamId.trim().length > 4 && isAppleValidated;
   const isStep4Complete = activeBuildId !== null;
+
+  // Whenever expoToken changes, invalidate validation unless it matches stored token
+  useEffect(() => {
+    const savedToken = localStorage.getItem('expo_ship_token');
+    if (savedToken && expoToken === savedToken) {
+      setIsExpoValidated(true);
+    } else {
+      setIsExpoValidated(false);
+    }
+  }, [expoToken]);
+
+  // Whenever Apple credentials change, invalidate validation
+  useEffect(() => {
+    setIsAppleValidated(false);
+  }, [appleKeyFile, issuerId, keyId, appleTeamId]);
 
   // Load history & token on mount
   useEffect(() => {
     fetchBuildHistory();
     const savedToken = localStorage.getItem('expo_ship_token');
-    if (savedToken) setExpoToken(savedToken);
+    if (savedToken) {
+      setExpoToken(savedToken);
+      setIsExpoValidated(true);
+    }
   }, []);
 
   // Poll active build details in background
@@ -119,14 +146,66 @@ export default function Home() {
     }
   };
 
-  const saveExpoToken = () => {
+  const saveExpoToken = async () => {
     if (!expoToken.trim()) return;
-    localStorage.setItem('expo_ship_token', expoToken);
-    setStep(3);
+    setIsValidatingExpo(true);
+    setErrorMsg('');
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/builds/validate-expo-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: expoToken })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Token validation failed.');
+      }
+      setIsExpoValidated(true);
+      localStorage.setItem('expo_ship_token', expoToken);
+      setStep(3);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.message || 'Expo token validation failed.');
+    } finally {
+      setIsValidatingExpo(false);
+    }
+  };
+
+  const handleValidateAppleAndNext = async () => {
+    if (!appleKeyFile || !issuerId.trim() || !keyId.trim() || !appleTeamId.trim()) {
+      setErrorMsg('Pre-flight check failed. Apple settings are incomplete.');
+      return;
+    }
+    setIsValidatingApple(true);
+    setErrorMsg('');
+    try {
+      const formData = new FormData();
+      formData.append('appleKey', appleKeyFile);
+      formData.append('issuerId', issuerId);
+      formData.append('keyId', keyId);
+      formData.append('appleTeamId', appleTeamId);
+
+      const res = await fetch(`${BACKEND_URL}/api/builds/validate-apple`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Apple credentials validation failed.');
+      }
+      setIsAppleValidated(true);
+      setStep(4);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.message || 'Apple credentials validation failed.');
+    } finally {
+      setIsValidatingApple(false);
+    }
   };
 
   const handleTriggerBuild = async () => {
-    if (!projectZip || !appleKeyFile || !expoToken || !issuerId || !keyId || !appleTeamId) {
+    const isProjectValid = projectSource === 'local' ? !!projectZip : githubUrl.trim().length > 0;
+    if (!isProjectValid || !appleKeyFile || !expoToken || !issuerId || !keyId || !appleTeamId) {
       setErrorMsg('Pre-flight check failed. Core settings are incomplete.');
       return;
     }
@@ -135,7 +214,12 @@ export default function Home() {
     setErrorMsg('');
 
     const formData = new FormData();
-    formData.append('project', projectZip, 'project.zip');
+    if (projectSource === 'local' && projectZip) {
+      formData.append('project', projectZip, 'project.zip');
+    } else if (projectSource === 'github') {
+      formData.append('githubUrl', githubUrl.trim());
+      formData.append('githubBranch', githubBranch.trim() || 'main');
+    }
     formData.append('appleKey', appleKeyFile);
     formData.append('expoToken', expoToken);
     formData.append('issuerId', issuerId);
@@ -157,12 +241,15 @@ export default function Home() {
         throw new Error(data.message || 'Build initialization rejected.');
       }
 
-      // Add to temporary departures board with animation
       const tempId = data.build._id;
+      const projName = projectSource === 'github'
+        ? (githubUrl.split('/').pop()?.replace('.git', '') || 'GitHub Project')
+        : (folderName || 'Expo App');
+
       const newRow: BuildRecord = {
         _id: tempId,
-        projectName: folderName || 'Expo App',
-        slug: 'expo-app',
+        projectName: projName,
+        slug: projName.toLowerCase().replace(/[\W_]+/g, '-'),
         bundleIdentifier: customBundleId || 'Pending detection...',
         status: 'pending',
         logs: ['Enqueuing build pipeline...'],
@@ -174,18 +261,22 @@ export default function Home() {
       setTemporaryBuilds(prev => [newRow, ...prev]);
       setActiveBuildId(tempId);
       setActiveBuild(newRow);
-      setActiveTab('history'); // Switch right panel to history immediately to watch build console!
+      setActiveTab('console'); // Switch right panel to Console tab immediately to watch build logs!
 
-      // Reset Wizard state to step 1 for subsequent triggers
+      // Reset Wizard state
       setFolderName('');
       setFilesCount(0);
       setProjectZip(null);
+      setGithubUrl('');
+      setGithubBranch('main');
       setAppleKeyFile(null);
       setIssuerId('');
       setKeyId('');
       setAppleTeamId('');
       setAppleTeamType('COMPANY_OR_ORGANIZATION');
       setCustomBundleId('');
+      setIsExpoValidated(false);
+      setIsAppleValidated(false);
       setStep(1);
     } catch (err) {
       console.error(err);
@@ -202,6 +293,11 @@ export default function Home() {
     } else {
       setActiveBuildId(null);
     }
+    setActiveTab('console');
+  };
+
+  const handleCloseConsole = () => {
+    setActiveTab('history');
   };
 
   // Combine temporary and server history builds
@@ -245,7 +341,7 @@ export default function Home() {
                 </div>
               )}
 
-              {activeTab === 'build' ? (
+              {activeTab === 'build' && (
                 <>
                   {/* STEP 1: PROJECT FILE ACCESS */}
                   {step === 1 && (
@@ -259,6 +355,12 @@ export default function Home() {
                         setStep(2);
                       }}
                       setErrorMsg={setErrorMsg}
+                      projectSource={projectSource}
+                      setProjectSource={setProjectSource}
+                      githubUrl={githubUrl}
+                      setGithubUrl={setGithubUrl}
+                      githubBranch={githubBranch}
+                      setGithubBranch={setGithubBranch}
                     />
                   )}
 
@@ -282,12 +384,9 @@ export default function Home() {
                       setKeyId={setKeyId}
                       appleTeamId={appleTeamId}
                       setAppleTeamId={setAppleTeamId}
-                      appleTeamType={appleTeamType}
-                      setAppleTeamType={setAppleTeamType}
                       customBundleId={customBundleId}
                       setCustomBundleId={setCustomBundleId}
                       setErrorMsg={setErrorMsg}
-                      onNext={() => setStep(4)}
                     />
                   )}
 
@@ -299,26 +398,38 @@ export default function Home() {
                       appleKeyFile={appleKeyFile}
                       issuerId={issuerId}
                       keyId={keyId}
+                      projectSource={projectSource}
+                      githubUrl={githubUrl}
+                      githubBranch={githubBranch}
                     />
                   )}
                 </>
-              ) : (
-                <>
-                  {/* STEP 5 / HISTORY: DEPARTURES & LIVE CONSOLE */}
-                  {activeBuild ? (
-                    <ConsoleFeed
-                      activeBuild={activeBuild}
-                      onClose={() => setActiveBuild(null)}
-                    />
-                  ) : (
-                    <DeparturesBoard
-                      combinedBuilds={combinedBuilds}
-                      isLoadingHistory={isLoadingHistory}
-                      fetchBuildHistory={fetchBuildHistory}
-                      onInspectLogs={viewBuildLogs}
-                    />
-                  )}
-                </>
+              )}
+
+              {activeTab === 'history' && (
+                <DeparturesBoard
+                  combinedBuilds={combinedBuilds}
+                  isLoadingHistory={isLoadingHistory}
+                  fetchBuildHistory={fetchBuildHistory}
+                  onInspectLogs={viewBuildLogs}
+                />
+              )}
+
+              {activeTab === 'console' && (
+                activeBuild ? (
+                  <ConsoleFeed
+                    activeBuild={activeBuild}
+                    onClose={handleCloseConsole}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-[#272E38] bg-[#14181F]/30">
+                    <span className="spectral-serif italic text-3xl text-[#C08A46] mb-3">✦</span>
+                    <h3 className="text-sm font-serif text-[#ECE8DF] mb-1">No Active Build Selected</h3>
+                    <p className="text-xs text-[#878E9C] max-w-sm">
+                      Please select a build from the <button onClick={() => setActiveTab('history')} className="text-[#C08A46] hover:underline focus:outline-none bg-transparent border-0 p-0 font-mono text-[11px] uppercase">Builds history</button> board to monitor its console feed.
+                    </p>
+                  </div>
+                )
               )}
             </div>
 
@@ -344,7 +455,7 @@ export default function Home() {
                     <button
                       id="btn-nav-step1"
                       onClick={() => setStep(2)}
-                      disabled={!projectZip}
+                      disabled={!isStep1Complete}
                       className="px-5 py-2.5 bg-[#E3A857] hover:bg-[#cfa15f] disabled:opacity-50 text-[#11151A] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors disabled:cursor-not-allowed border-0 focus:outline-none rounded-none"
                     >
                       Next <ArrowRightIcon className="h-3.5 w-3.5" />
@@ -354,37 +465,53 @@ export default function Home() {
                     <button
                       id="btn-nav-step2"
                       onClick={saveExpoToken}
-                      disabled={expoToken.trim().length <= 10}
+                      disabled={expoToken.trim().length <= 10 || isValidatingExpo}
                       className="px-5 py-2.5 bg-[#E3A857] hover:bg-[#cfa15f] disabled:opacity-50 text-[#11151A] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors disabled:cursor-not-allowed border-0 focus:outline-none rounded-none"
                     >
-                      Next <ArrowRightIcon className="h-3.5 w-3.5" />
+                      {isValidatingExpo ? (
+                        <span className="flex items-center gap-1.5">
+                          <Loader2Icon className="h-3.5 w-3.5 animate-spin" /> validating...
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5">
+                          Next <ArrowRightIcon className="h-3.5 w-3.5" />
+                        </span>
+                      )}
                     </button>
                   )}
                   {step === 3 && (
                     <button
                       id="btn-nav-step3"
-                      onClick={() => setStep(4)}
-                      disabled={!appleKeyFile || !issuerId.trim() || !keyId.trim() || !appleTeamId.trim()}
+                      onClick={handleValidateAppleAndNext}
+                      disabled={!appleKeyFile || !issuerId.trim() || !keyId.trim() || !appleTeamId.trim() || isValidatingApple}
                       className="px-5 py-2.5 bg-[#E3A857] hover:bg-[#cfa15f] disabled:opacity-50 text-[#11151A] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors disabled:cursor-not-allowed border-0 focus:outline-none rounded-none"
                     >
-                      Next <ArrowRightIcon className="h-3.5 w-3.5" />
+                      {isValidatingApple ? (
+                        <span className="flex items-center gap-1.5">
+                          <Loader2Icon className="h-3.5 w-3.5 animate-spin" /> validating...
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5">
+                          Next <ArrowRightIcon className="h-3.5 w-3.5" />
+                        </span>
+                      )}
                     </button>
                   )}
                   {step === 4 && (
                     <button
                       id="btn-nav-begin-build"
                       onClick={handleTriggerBuild}
-                      disabled={isSubmitting || !projectZip || !appleKeyFile || !expoToken || !issuerId || !keyId || !appleTeamId}
+                      disabled={isSubmitting || !isStep1Complete || !appleKeyFile || !expoToken || !issuerId || !keyId || !appleTeamId}
                       className="px-6 py-2.5 bg-[#E3A857] hover:bg-[#cfa15f] disabled:opacity-50 text-[#11151A] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors disabled:cursor-not-allowed border-0 focus:outline-none rounded-none"
                     >
                       {isSubmitting ? (
-                        <>
+                        <span className="flex items-center gap-1.5">
                           <Loader2Icon className="h-3.5 w-3.5 animate-spin" /> clearance processing...
-                        </>
+                        </span>
                       ) : (
-                        <>
+                        <span className="flex items-center gap-1.5">
                           <PlayIcon className="h-3.5 w-3.5" /> Begin build
-                        </>
+                        </span>
                       )}
                     </button>
                   )}
